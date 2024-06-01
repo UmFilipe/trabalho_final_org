@@ -7,9 +7,12 @@
     insert_msg: .asciz "\nDigite um valor para ser inserido na lista: \n"
     insert_success: .asciz "\nValor inserido na lista.\n"
     insert_fail:    .asciz "\nErro ao inserir elemento na lista.\n"
+    remove_by_index_msg: .asciz "\nDigite o índice da lista que deseja remover\n"
+    remove_by_value_msg: .asciz "\nDigite o valor da lista que deseja remover\n"
     remove_success: .asciz "\nElemento removido da lista.\n"
     remove_fail:    .asciz "\nErro ao remover elemento da lista.\n"
     list_elements:  .asciz "\nElementos da lista: \n"
+    empty_list: .asciz "Lista vazia.\n"
     stats_message:  .asciz "\nEstatísticas da lista: \n"
     exit_message:   .asciz "\nSaindo do programa...\n"
 
@@ -47,9 +50,9 @@ main:
 # Função de inserção (1)
 
 insert_element:
-    la a0, insert_msg
+    la a0, insert_msg 
     li a7, 4
-    ecall
+    ecall # Imprime mensagem de inserção
 
     
     li a7, 5
@@ -90,7 +93,7 @@ end_found:
     j insert_done
 
 insert_first:
-    sw t2, 0(t1)              # Definir o novo nó como o cabeça da lista
+    sw t2, 0(t1)              # Define o novo nó como o cabeça da lista
 
 insert_done:
     la a0, insert_success
@@ -101,6 +104,13 @@ insert_done:
 # Função de remoção por índice (2)
 
 remove_by_index:
+    la a0, remove_by_index_msg 
+    li a7, 4
+    ecall # Imprime mensagem de remoção por índice
+
+    li a7, 5
+    ecall # Lê o valor inteiro do usuário
+
     la a0, remove_success
     li a7, 4
     ecall
@@ -109,6 +119,13 @@ remove_by_index:
 # Função de remoção por valor (3)
 
 remove_by_value:
+    la a0, remove_by_value_msg
+    li a7, 4
+    ecall # Imprime mensagem de remoção por valor
+
+    li a7, 5
+    ecall # Lê o valor inteiro do usuário
+
     la a0, remove_success
     li a7, 4
     ecall
@@ -124,7 +141,7 @@ print_list:
     # Verifica se a lista está vazia
     la t1, head
     lw t0, 0(t1)
-    beq t0, zero, print_list_done
+    beq t0, zero, print_empty_list
 
     # Percorre a lista e imprime cada elemento
 print_list_loop:
@@ -142,10 +159,11 @@ print_list_loop:
     lw t0, 4(t0)           # Carrega o campo 'próximo'
     bne t0, zero, print_list_loop # Se 'próximo' não for zero, continuar
 
-print_list_done:
+
+print_empty_list:
     # Imprime nova linha
-    li a0, '\n'
-    li a7, 11         
+    la a0, empty_list
+    li a7, 4        
     ecall
 
     j main
