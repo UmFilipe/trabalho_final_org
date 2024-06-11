@@ -209,6 +209,7 @@ print_list_loop:
     # Carrega o endereço do próximo nó
     lw t0, 4(t0)           # Carrega o campo 'próximo'
     bne t0, zero, print_list_loop # Se 'próximo' não for zero, continuar
+    j main
 
 print_empty_list:
     # Imprime nova linha
