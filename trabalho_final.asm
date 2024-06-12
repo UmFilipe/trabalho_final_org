@@ -6,7 +6,6 @@
 
     node_size:	.word 8		           # Tamanho do nó (8 bytes)
     head:       .word 0                # Ponteiro para o início da lista
-    current:    .space 4               # Espaço para armazenar o ponteiro atual
     insert_count:   .word 0            # Contador de inserções 
 
     menu:   .asciz "\n1. Inserir elemento na lista\n2. Remover elemento por indice\n3. Remover elemento por valor\n4. Mostrar todos os elementos\n5. Mostrar estatisticas\n6. Sair\nEscolha uma opcao: "
