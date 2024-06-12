@@ -3,9 +3,12 @@
 # - Filipe Medeiros de Almeida (2221101029)
 
 .data
-    node_size:	.word 8		       #(8 bytes)
+
+    node_size:	.word 8		           # Tamanho do nó (8 bytes)
     head:       .word 0                # Ponteiro para o início da lista
     current:    .space 4               # Espaço para armazenar o ponteiro atual
+    insert_count:   .word 0            # Contador de inserções 
+
     menu:   .asciz "\n1. Inserir elemento na lista\n2. Remover elemento por indice\n3. Remover elemento por valor\n4. Mostrar todos os elementos\n5. Mostrar estatisticas\n6. Sair\nEscolha uma opcao: "
     insert_msg: .asciz "\nDigite um valor para ser inserido na lista: \n"
     insert_success: .asciz "\nValor inserido na lista.\n"
@@ -17,12 +20,14 @@
     list_elements:  .asciz "\nElementos da lista: \n"
     empty_list: .asciz "Lista vazia.\n"
     stats_message:  .asciz "\nEstatísticas da lista: \n"
+    min_value_msg:  .asciz "Menor valor: "
+    max_value_msg:  .asciz "\nMaior valor: "
+    total_inserts_msg: .asciz "\nTotal de inserções: "
     exit_message:   .asciz "\nSaindo do programa...\n"
+    new_line: .asciz "\n"
 
 .text
-.globl inicio
 
-inicio:
 main:
     la a0, menu 
     li a7, 4
@@ -111,6 +116,11 @@ insert_first:
     li a0, 1                  # Retorna sucesso
 
 insert_done:
+    # Incrementa o contador de inserções
+    la t0, insert_count
+    lw t1, 0(t0)
+    addi t1, t1, 1
+    sw t1, 0(t0)
     ret
 
 insert_fail_label:
@@ -122,6 +132,8 @@ insert_success_message:
     li a7, 4
     ecall
     j main
+
+# --------------------------------------------------
 
 # Função de remoção por índice (2)
 
@@ -151,6 +163,8 @@ valid_input:
     ecall
     j main
 
+# --------------------------------------------------
+
 # Função de remoção por valor (3)
 
 call_remove_by_value:
@@ -178,6 +192,8 @@ valid_input_value:
     li a7, 4
     ecall
     j main
+
+# --------------------------------------------------    
     
 # Função de imprime a lista (4)
 
@@ -194,7 +210,6 @@ print_list:
     lw t0, 0(t1)
     beq t0, zero, print_empty_list
 
-    # Percorre a lista e imprime cada elemento
 print_list_loop:
     # Imprime valor do nó atual
     lw a0, 0(t0)           # Carrega o valor do nó atual
@@ -209,15 +224,22 @@ print_list_loop:
     # Carrega o endereço do próximo nó
     lw t0, 4(t0)           # Carrega o campo 'próximo'
     bne t0, zero, print_list_loop # Se 'próximo' não for zero, continuar
-    j main
 
-print_empty_list:
-    # Imprime nova linha
-    la a0, empty_list
-    li a7, 4        
+    la a0, new_line  
+    li a7, 4      
     ecall
 
     j main
+
+print_empty_list:
+    # Imprime mensagem de lista vazia
+    la a0, empty_list
+    li a7, 4        
+    ecall        
+
+    j main
+
+# --------------------------------------------------
 
 # Função que imprime as estatísticas (5)
 
@@ -228,7 +250,77 @@ print_stats:
     la a0, stats_message
     li a7, 4
     ecall
+
+    # Verifica se a lista está vazia
+    la t1, head
+    lw t0, 0(t1)
+    beq t0, zero, print_empty_list_stats
+
+    # Inicializa as variáveis de estatísticas
+    lw t2, 0(t0)           # t2 = menor valor (inicializa com o valor do primeiro nó)
+    lw t3, 0(t0)           # t3 = maior valor (inicializa com o valor do primeiro nó)
+    li t4, 0               # t4 = contador de elementos
+
+stats_loop:
+    lw t5, 0(t0)           # t5 = valor do nó atual
+    blt t5, t2, update_min # Atualiza menor valor se necessário
+    bgt t5, t3, update_max # Atualiza maior valor se necessário
+
+    addi t4, t4, 1         # Incrementa o contador de elementos
+    lw t0, 4(t0)           # Carrega o endereço do próximo nó
+    bne t0, zero, stats_loop # Se 'próximo' não for zero, continuar
+
+    # Exibe o menor valor
+    la a0, min_value_msg
+    li a7, 4
+    ecall
+
+    mv a0, t2              # Menor valor
+    li a7, 1
+    ecall
+
+    # Exibe o maior valor
+    la a0, max_value_msg
+    li a7, 4
+    ecall
+
+    mv a0, t3              # Maior valor
+    li a7, 1
+    ecall
+
+    # Exibe o total de inserções
+    la a0, total_inserts_msg
+    li a7, 4
+    ecall
+
+    la t0, insert_count
+    lw a0, 0(t0)           # Total de inserções
+    li a7, 1
+    ecall
+
+    la a0, new_line  
+    li a7, 4      
+    ecall  
+
     j main
+
+update_min:
+    mv t2, t5              # Atualiza menor valor
+    j stats_loop
+
+update_max:
+    mv t3, t5              # Atualiza maior valor
+    j stats_loop
+
+print_empty_list_stats:
+    # Imprime mensagem de lista vazia
+    la a0, empty_list
+    li a7, 4        
+    ecall
+
+    j main
+
+# --------------------------------------------------
 
 # Função que sai do programa (6)
 
@@ -241,3 +333,5 @@ exit:
     ecall
     li a7, 10
     ecall
+
+# --------------------------------------------------
