@@ -218,12 +218,20 @@ remove_element:
     # Remove o nó encontrado
     lw t5, 4(t1)            # Carrega o ponteiro para o próximo nó
     sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior
-    lw t5, 0(t1)            # Apaga o valor da memória
-    sw zero, 0(t1)
-    addi t3, t3, 1         # Incrementa o contador de remoções
+    lw t5, 0(t1)            # Carrega o valor do nó atual
+    sw zero, 0(t1)          # Apaga o valor do nó atual definindo-o como 0
+    addi t3, t3, 1          # Incrementa o contador de remoções
 
-    # Verifica se o nó removido é o único nó da lista
-    lw t5, 4(t0)           # Carrega o ponteiro 'próximo' do nó inicial (head)
+    # Verifica se o nó removido é o primeiro nó da lista
+    beq t4, t0, update_head # Se for o primeiro nó, atualiza a cabeça da lista
+
+    j remove_success_label
+
+update_head:
+    lw t5, 4(t1)           # Carrega o ponteiro 'próximo' do nó atual
+    sw t5, 0(t0)           # Atualiza a cabeça da lista para o próximo nó
+
+    # Verifica se a lista ficou vazia
     beqz t5, empty_list_after_remove
 
     j remove_success_label
@@ -242,6 +250,7 @@ remove_fail_label:
     li a7, 4
     ecall
     j main
+
 
 # --------------------------------------------------    
     
