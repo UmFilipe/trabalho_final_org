@@ -6,7 +6,8 @@
 
     node_size:	.word 8		           # Tamanho do nó (8 bytes)
     head:       .word 0                # Ponteiro para o início da lista
-    insert_count:   .word 0            # Contador de inserções 
+    insert_count:   .word 0            # Contador de inserções
+    remove_count:   .word 0            # Contador de remoções
 
     menu:   .asciz "\n1. Inserir elemento na lista\n2. Remover elemento por indice\n3. Remover elemento por valor\n4. Mostrar todos os elementos\n5. Mostrar estatisticas\n6. Sair\nEscolha uma opcao: "
     insert_msg: .asciz "\nDigite um valor para ser inserido na lista: \n"
@@ -22,6 +23,7 @@
     min_value_msg:  .asciz "Menor valor: "
     max_value_msg:  .asciz "\nMaior valor: "
     total_inserts_msg: .asciz "\nTotal de inserções: "
+    total_removes_msg: .asciz "\nTotal de remoções: "
     exit_message:   .asciz "\nSaindo do programa...\n"
     new_line: .asciz "\n"
 
@@ -176,18 +178,67 @@ remove_by_value:
 
     li a7, 5
     ecall # Lê o valor inteiro do usuário
-    # Verifica se o input é válido
-    bltz a0, invalid_input_value
-    bgez a0, valid_input_value
+    # Chama a função de remoção por valor com o valor lido em a0
+    mv a1, a0
+    la a0, head
+    call remove_element_by_value
 
-invalid_input_value:
-    la a0, remove_fail
+    # Verifica o retorno da função
+    li t1, 1
+    beq a0, t1, remove_success_label # Vai para a etiqueta de sucesso se o retorno for 1
+    j remove_fail_label
+
+remove_element_by_value:
+    la t0, head            # Carrega o endereço da cabeça da lista
+    lw t1, 0(t0)           # Carrega o ponteiro para o primeiro nó
+
+    # Verifica se a lista está vazia
+    beqz t1, remove_fail_label # Se a lista estiver vazia, falha
+
+    # Inicializa variáveis
+    mv t3, zero             # t3 = contador de elementos removidos
+    mv t4, t0               # t4 = ponteiro para o nó anterior
+    mv t2, a1               # t2 = valor a ser removido
+
+remove_by_value_loop:
+    lw t5, 0(t1)           # Carrega o valor do nó atual
+
+    # Verifica se o valor do nó é igual ao valor a ser removido
+    beq t5, t2, remove_element
+
+    # Atualiza os ponteiros e variáveis para o próximo nó
+    mv t4, t1               # Atualiza ponteiro para o nó anterior
+    lw t1, 4(t1)            # Carrega o ponteiro para o próximo nó
+    bnez t1, remove_by_value_loop    # Se houver próximo nó, continua o loop
+
+    # Se não encontrou o valor, retorna falha
+    j remove_fail_label
+
+remove_element:
+    # Remove o nó encontrado
+    lw t5, 4(t1)            # Carrega o ponteiro para o próximo nó
+    sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior
+    lw t5, 0(t1)            # Apaga o valor da memória
+    sw zero, 0(t1)
+    addi t3, t3, 1         # Incrementa o contador de remoções
+
+    # Verifica se o nó removido é o único nó da lista
+    lw t5, 4(t0)           # Carrega o ponteiro 'próximo' do nó inicial (head)
+    beqz t5, empty_list_after_remove
+
+    j remove_success_label
+
+empty_list_after_remove:
+    sw zero, 0(t0)          # Define a cabeça da lista como 0 (vazia)
+
+remove_success_label:
+    la a0, remove_success
     li a7, 4
     ecall
     j main
 
-valid_input_value:
-    la a0, remove_success
+remove_fail_label:
+    la a0, remove_fail
     li a7, 4
     ecall
     j main
@@ -293,6 +344,15 @@ stats_loop:
     ecall
 
     la t0, insert_count
+    lw a0, 0(t0)           # Total de inserções
+    li a7, 1
+    ecall
+
+    la a0, total_removes_msg
+    li a7, 4
+    ecall
+
+    la t0, remove_count
     lw a0, 0(t0)           # Total de inserções
     li a7, 1
     ecall
