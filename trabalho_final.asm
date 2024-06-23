@@ -196,7 +196,6 @@ remove_element_by_value:
     beqz t1, remove_fail_label # Se a lista estiver vazia, falha
 
     # Inicializa variáveis
-    mv t3, zero             # t3 = contador de elementos removidos
     mv t4, t0               # t4 = ponteiro para o nó anterior
     mv t2, a1               # t2 = valor a ser removido
 
@@ -217,13 +216,11 @@ remove_by_value_loop:
 remove_element:
     # Remove o nó encontrado
     lw t5, 4(t1)            # Carrega o ponteiro para o próximo nó
-    sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior
-    lw t5, 0(t1)            # Carrega o valor do nó atual
+    sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior para o próximo nó
     sw zero, 0(t1)          # Apaga o valor do nó atual definindo-o como 0
-    addi t3, t3, 1          # Incrementa o contador de remoções
 
-    # Verifica se o nó removido é o primeiro nó da lista
-    beq t4, t0, update_head # Se for o primeiro nó, atualiza a cabeça da lista
+    # Atualiza a cabeça da lista se o nó removido for o primeiro nó
+    beq t4, t0, update_head
 
     j remove_success_label
 
