@@ -247,28 +247,42 @@ remove_by_value_loop:
     # Se não encontrou o valor, retorna falha
     j remove_fail_label
 
-remove_element:
+    remove_element:
     # Remove o nó encontrado
     lw t5, 4(t1)            # Carrega o ponteiro para o próximo nó
     sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior para o próximo nó
     sw zero, 0(t1)          # Apaga o valor do nó atual definindo-o como 0
 
     # Atualiza a cabeça da lista se o nó removido for o primeiro nó
-    beq t4, t0, update_head
+    beq t4, t0, update_head_remove_value
 
     j remove_success_label
 
-update_head:
+update_head_remove_value:
     lw t5, 4(t1)           # Carrega o ponteiro 'próximo' do nó atual
     sw t5, 0(t0)           # Atualiza a cabeça da lista para o próximo nó
 
+    # Incrementa o contador de remoções
+    la t0, remove_count
+    lw t1, 0(t0)
+    addi t1, t1, 1
+    sw t1, 0(t0)
+
     # Verifica se a lista ficou vazia
-    beqz t5, empty_list_after_remove
+    beqz t5, empty_list_after_remove_value
 
     j remove_success_label
 
-empty_list_after_remove:
+empty_list_after_remove_value:
     sw zero, 0(t0)          # Define a cabeça da lista como 0 (vazia)
+
+    # Incrementa o contador de remoções
+    la t0, remove_count
+    lw t1, 0(t0)
+    addi t1, t1, 1
+    sw t1, 0(t0)
+
+    j remove_success_label
 
 remove_success_label:
     la a0, remove_success
