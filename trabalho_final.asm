@@ -30,11 +30,11 @@
 .text
 
 main:
-    la a0, menu 
+    la a0, menu
     li a7, 4
     ecall # Mostra o menu
 
-    li a7, 5 
+    li a7, 5
     ecall # Pega o input do usuário
     li t0, 0
     li t1, 1
@@ -89,10 +89,10 @@ insert_element:
     # Verifica se a lista está vazia
     lw t0, 0(t2)
     beqz t0, insert_first     # Se a lista está vazia, insere no início
-    
+
     lw t5, 0(t0) 	      #Pega valor primeiro nó
     blt a1, t5, insert_first  #Verifica se o primeiro valor é maior que o novo valor
-    
+
     # Insere de forma ordenada
     mv t1, t0                 # t1 é o ponteiro para o nó atual
     lw t3, 0(t1)              # t3 é o valor do nó atual
@@ -142,27 +142,61 @@ call_remove_by_index:
     call remove_by_index
 
 remove_by_index:
-    la a0, remove_by_index_msg 
+    la a0, remove_by_index_msg
     li a7, 4
     ecall # Imprime mensagem de remoção por índice
 
     li a7, 5
-    ecall # Lê o valor inteiro do usuário
-    # Verifica se o input é válido
-    bltz a0, invalid_input
-    bgez a0, valid_input
+    ecall # L� o valor inteiro do usuário
+     # Chama a função de remoção por index com o valor lido em a0
+    mv a1, a0
+    la a0, head
+    call remove_element_by_index
 
-invalid_input:
-    la a0, remove_fail
-    li a7, 4
-    ecall
-    j main
+    li t1, 1
+    beq a0, t1, remove_success_label # Vai para a etiqueta de sucesso se o retorno for 1
+    j remove_fail_label
 
-valid_input:
-    la a0, remove_success
+
+    la a0, remove_by_value_msg
     li a7, 4
-    ecall
-    j main
+    ecall # Imprime mensagem de remoçãoo por valor
+
+    li a7, 5
+    ecall # L� o valor inteiro do usuário
+    # Chama a função de remoção por valor com o valor lido em a0
+    mv a1, a0
+    la a0, head
+    call remove_element_by_value
+
+    # Verifica o retorno da função
+    li t1, 1
+    beq a0, t1, remove_success_label # Vai para a etiqueta de sucesso se o retorno for 1
+    j remove_fail_label
+
+remove_element_by_index:
+    la t0, head
+    lw t1, 0(t0)
+
+    # Verifica se a lista está vazia
+    beqz t1, remove_fail_label # Se a lista estiver vazia, falha
+
+    # Inicializa variáveis
+    mv t4, t0               # t4 = ponteiro para o nó anterior
+    mv t2, a1               # t2 = index a ser removido
+    li t6, 1	    # t6 = primeiro index
+
+remove_by_index_loop:
+    beq t6, t2, remove_element
+    addi t6, t6, 1
+
+    # Atualiza os ponteiros e variáveis para o próximo nó
+    mv t4, t1               # Atualiza ponteiro para o nó anterior
+    lw t1, 4(t1)            # Carrega o ponteiro para o próximo nó
+    bnez t1, remove_by_index_loop    # Se houver próximo nó, continua o loop
+
+    # Se não encontrou o valor, retorna falha
+    j remove_fail_label
 
 # --------------------------------------------------
 
@@ -249,9 +283,9 @@ remove_fail_label:
     j main
 
 
-# --------------------------------------------------    
-    
-# Função de imprime a lista (4)
+# --------------------------------------------------
+
+# Função que imprime a lista (4)
 
 call_print_list:
     call print_list
@@ -274,15 +308,15 @@ print_list_loop:
 
     # Imprime espaço
     li a0, ' '
-    li a7, 11     
+    li a7, 11
     ecall
 
     # Carrega o endereço do próximo nó
     lw t0, 4(t0)           # Carrega o campo 'próximo'
     bne t0, zero, print_list_loop # Se 'próximo' não for zero, continuar
 
-    la a0, new_line  
-    li a7, 4      
+    la a0, new_line
+    li a7, 4
     ecall
 
     j main
@@ -290,8 +324,8 @@ print_list_loop:
 print_empty_list:
     # Imprime mensagem de lista vazia
     la a0, empty_list
-    li a7, 4        
-    ecall        
+    li a7, 4
+    ecall
 
     j main
 
@@ -363,9 +397,9 @@ stats_loop:
     li a7, 1
     ecall
 
-    la a0, new_line  
-    li a7, 4      
-    ecall  
+    la a0, new_line
+    li a7, 4
+    ecall
 
     j main
 
@@ -380,7 +414,7 @@ update_max:
 print_empty_list_stats:
     # Imprime mensagem de lista vazia
     la a0, empty_list
-    li a7, 4        
+    li a7, 4
     ecall
 
     j main
