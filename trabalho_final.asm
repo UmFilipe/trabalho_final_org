@@ -104,18 +104,18 @@ insert_loop:
     beqz t4, insert_here      # Se não há próximo, insere aqui
     lw t5, 0(t4)              # t5 é o valor do próximo nó
     blt a1, t5, insert_here   # Se o valor a inserir é menor que o próximo, insere aqui
-    mv t1, t4                 # Avança para o próximo nó
+    mv t1, t4                 # Avança para o próximo nó (faz t1 apontar pro próximo nó)
     j insert_loop
 
 insert_here:
-    sw a0, 4(t1)              # Atualiza o ponteiro 'próximo' do nó atual para o novo nó
-    sw t4, 4(a0)              # Atualiza o ponteiro 'próximo' do novo nó para o próximo nó
+    sw a0, 4(t1)              # t1 = nó anterior // agora aponta pro novo valor
+    sw t4, 4(a0)              # t4 = próximo nó // novo valor (a0) agora aponta pra ele
     li a0, 1                  # Retorna sucesso
     j insert_done
 
 insert_first:
-    sw a0, 0(t2)              # Atualiza o ponteiro 'próximo' do nó atual para o novo nó
-    sw t0, 4(a0)              # Atualiza o ponteiro 'próximo' do novo nó para o próximo nó
+    sw a0, 0(t2)              # t2 = cabeça da lista // agora aponta pro novo valor
+    sw t0, 4(a0)              # t0 = antigo primeiro valor // agora é o segundo pois a0 aponta pra ele
     li a0, 1                  # Retorna sucesso
 
 insert_done:
@@ -268,15 +268,17 @@ remove_element:
     # Atualiza a cabeça da lista se o nó removido for o primeiro nó
     beq t4, t0, update_head_remove_value
     
-    sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior para o próximo nó
+    sw t5, 4(t4)            # t1 = nó a ser removido // 
+                            # t4 = nó anterior // t5 próximo nó // 
+                            # t4 agora aponta pra t5, ignorando o intermediario que foi removido
     sw zero, 0(t1)          # Apaga o valor do nó atual definindo-o como 0
 
     j remove_success_label
 
 update_head_remove_value:
-    lw t5, 4(t1)           # Carrega o ponteiro 'próximo' do nó atual
-    sw t5, 0(t4)           # Atualiza a cabeça da lista para o próximo nó
-
+    lw t5, 4(t1)    # t5 = próximo nó depois do que irá ser removido       
+    sw t5, 0(t4)    # t4 = aponta pro primeiro elemento pois elemento a ser removido é o primeiro
+                    # Coloca a cabeça da lista para apontar para o t5 (novo primeiro) 
 
     # Verifica se a lista ficou vazia
     beqz t5, empty_list_after_remove_value
