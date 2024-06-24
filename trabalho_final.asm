@@ -18,12 +18,13 @@
     remove_success: .asciz "\nElemento removido da lista.\n"
     remove_fail:    .asciz "\nErro ao remover elemento da lista.\n"
     list_elements:  .asciz "\nElementos da lista: \n"
-    empty_list: .asciz "Lista vazia.\n"
+    empty_list: .asciz "\nLista vazia.\n"
     stats_message:  .asciz "\nEstatísticas da lista: \n"
-    min_value_msg:  .asciz "Menor valor: "
+    min_value_msg:  .asciz "\nMenor valor: "
     max_value_msg:  .asciz "\nMaior valor: "
     total_inserts_msg: .asciz "\nTotal de inserções: "
     total_removes_msg: .asciz "\nTotal de remoções: "
+    total_elements_msg: .asciz "\nTotal de elementos: "
     exit_message:   .asciz "\nSaindo do programa...\n"
     new_line: .asciz "\n"
 
@@ -52,8 +53,9 @@ main:
 
     j main
 
-# Função de inserção (1)
-
+# --------------------------------------------------#
+#					Insere Valor Ordenado			                #
+# --------------------------------------------------#
 call_insert_element:
     la a0, insert_msg
     li a7, 4
@@ -126,7 +128,7 @@ insert_done:
 
 insert_fail_label:
     li a0, -1                 # Retorna falha
-    ret
+    j main
 
 insert_success_message:
     la a0, insert_success
@@ -134,12 +136,12 @@ insert_success_message:
     ecall
     j main
 
-# --------------------------------------------------
-
-# Função de remoção por índice (2)
-
+# --------------------------------------------------#
+#					Remove Por Indíce 				                #
+# --------------------------------------------------#
 call_remove_by_index:
     call remove_by_index
+    j main
 
 remove_by_index:
     la a0, remove_by_index_msg
@@ -151,6 +153,7 @@ remove_by_index:
      # Chama a função de remoção por index com o valor lido em a0
     mv a1, a0
     la a0, head
+    mv t6, ra
     call remove_element_by_index
 
     li t1, 1
@@ -158,7 +161,7 @@ remove_by_index:
     j remove_fail_label
 
 
-    la a0, remove_by_value_msg
+    la a0, remove_by_index_msg
     li a7, 4
     ecall # Imprime mensagem de remoçãoo por valor
 
@@ -167,7 +170,7 @@ remove_by_index:
     # Chama a função de remoção por valor com o valor lido em a0
     mv a1, a0
     la a0, head
-    call remove_element_by_value
+    call remove_element_by_index
 
     # Verifica o retorno da função
     li t1, 1
@@ -179,31 +182,36 @@ remove_element_by_index:
     lw t1, 0(t0)
 
     # Verifica se a lista está vazia
-    beqz t1, remove_fail_label # Se a lista estiver vazia, falha
-
+    bnez t1, remove_index_not_empty # Se a lista estiver vazia, falha
+    li a0, -1
+	ret
+	
+remove_index_not_empty:
     # Inicializa variáveis
     mv t4, t0               # t4 = ponteiro para o nó anterior
     mv t2, a1               # t2 = index a ser removido
-    li t6, 1	    # t6 = primeiro index
+    li a6, 1	    	    # t6 = primeiro index
+    
 
 remove_by_index_loop:
-    beq t6, t2, remove_element
-    addi t6, t6, 1
+    beq a6, t2, remove_element
+    addi a6, a6, 1
 
     # Atualiza os ponteiros e variáveis para o próximo nó
     mv t4, t1               # Atualiza ponteiro para o nó anterior
     lw t1, 4(t1)            # Carrega o ponteiro para o próximo nó
     bnez t1, remove_by_index_loop    # Se houver próximo nó, continua o loop
 
-    # Se não encontrou o valor, retorna falha
+    # Se não encontrou o index, retorna falha
     j remove_fail_label
 
-# --------------------------------------------------
-
-# Função de remoção por valor (3)
+# --------------------------------------------------#
+#					Remove Por Valor 				                  #
+# --------------------------------------------------#
 
 call_remove_by_value:
     call remove_by_value
+    j main
 
 remove_by_value:
     la a0, remove_by_value_msg
@@ -212,9 +220,11 @@ remove_by_value:
 
     li a7, 5
     ecall # Lê o valor inteiro do usuário
+    
     # Chama a função de remoção por valor com o valor lido em a0
     mv a1, a0
     la a0, head
+    mv t6, ra
     call remove_element_by_value
 
     # Verifica o retorno da função
@@ -234,8 +244,9 @@ remove_element_by_value:
     mv t2, a1               # t2 = valor a ser removido
 
 remove_by_value_loop:
-    lw t5, 0(t1)           # Carrega o valor do nó atual
-
+    lw t5, 0(t1)            # Carrega o valor do nó atual
+	mv a1, t5				# Define a1 com valor do elemento
+	
     # Verifica se o valor do nó é igual ao valor a ser removido
     beq t5, t2, remove_element
 
@@ -247,26 +258,25 @@ remove_by_value_loop:
     # Se não encontrou o valor, retorna falha
     j remove_fail_label
 
-    remove_element:
+# --------------------------------------------------#
+#					Remove Valor					                    #
+# --------------------------------------------------#
+remove_element:
     # Remove o nó encontrado
     lw t5, 4(t1)            # Carrega o ponteiro para o próximo nó
-    sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior para o próximo nó
-    sw zero, 0(t1)          # Apaga o valor do nó atual definindo-o como 0
-
+    
     # Atualiza a cabeça da lista se o nó removido for o primeiro nó
     beq t4, t0, update_head_remove_value
+    
+    sw t5, 4(t4)            # Atualiza o ponteiro 'próximo' do nó anterior para o próximo nó
+    sw zero, 0(t1)          # Apaga o valor do nó atual definindo-o como 0
 
     j remove_success_label
 
 update_head_remove_value:
     lw t5, 4(t1)           # Carrega o ponteiro 'próximo' do nó atual
-    sw t5, 0(t0)           # Atualiza a cabeça da lista para o próximo nó
+    sw t5, 0(t4)           # Atualiza a cabeça da lista para o próximo nó
 
-    # Incrementa o contador de remoções
-    la t0, remove_count
-    lw t1, 0(t0)
-    addi t1, t1, 1
-    sw t1, 0(t0)
 
     # Verifica se a lista ficou vazia
     beqz t5, empty_list_after_remove_value
@@ -276,33 +286,39 @@ update_head_remove_value:
 empty_list_after_remove_value:
     sw zero, 0(t0)          # Define a cabeça da lista como 0 (vazia)
 
-    # Incrementa o contador de remoções
+remove_success_label:
+	# Incrementa o contador de remoções
     la t0, remove_count
     lw t1, 0(t0)
     addi t1, t1, 1
     sw t1, 0(t0)
 
-    j remove_success_label
-
-remove_success_label:
     la a0, remove_success
     li a7, 4
-    ecall
-    j main
+    ecall    
+    li a0, 1         # Retorna Sucesso
+	
+	mv ra, t6
+    ret
 
 remove_fail_label:
     la a0, remove_fail
     li a7, 4
     ecall
-    j main
+    
+    li a0, -1
+    li a1, -1
+    
+    mv ra, t6
+    ret
 
 
-# --------------------------------------------------
-
-# Função que imprime a lista (4)
-
+# --------------------------------------------------#
+#					Função Imprime Lista			                #
+# --------------------------------------------------#
 call_print_list:
     call print_list
+    j main
 
 print_list:
     la a0, list_elements
@@ -333,7 +349,7 @@ print_list_loop:
     li a7, 4
     ecall
 
-    j main
+    ret
 
 print_empty_list:
     # Imprime mensagem de lista vazia
@@ -341,55 +357,18 @@ print_empty_list:
     li a7, 4
     ecall
 
-    j main
+    ret
 
-# --------------------------------------------------
-
-# Função que imprime as estatísticas (5)
-
+# --------------------------------------------------#
+#					Mostra Estatistica 				                #
+# --------------------------------------------------#
 call_print_stats:
     call print_stats
+    j main
 
 print_stats:
     la a0, stats_message
     li a7, 4
-    ecall
-
-    # Verifica se a lista está vazia
-    la t1, head
-    lw t0, 0(t1)
-    beq t0, zero, print_empty_list_stats
-
-    # Inicializa as variáveis de estatísticas
-    lw t2, 0(t0)           # t2 = menor valor (inicializa com o valor do primeiro nó)
-    lw t3, 0(t0)           # t3 = maior valor (inicializa com o valor do primeiro nó)
-    li t4, 0               # t4 = contador de elementos
-
-stats_loop:
-    lw t5, 0(t0)           # t5 = valor do nó atual
-    blt t5, t2, update_min # Atualiza menor valor se necessário
-    bgt t5, t3, update_max # Atualiza maior valor se necessário
-
-    addi t4, t4, 1         # Incrementa o contador de elementos
-    lw t0, 4(t0)           # Carrega o endereço do próximo nó
-    bne t0, zero, stats_loop # Se 'próximo' não for zero, continuar
-
-    # Exibe o menor valor
-    la a0, min_value_msg
-    li a7, 4
-    ecall
-
-    mv a0, t2              # Menor valor
-    li a7, 1
-    ecall
-
-    # Exibe o maior valor
-    la a0, max_value_msg
-    li a7, 4
-    ecall
-
-    mv a0, t3              # Maior valor
-    li a7, 1
     ecall
 
     # Exibe o total de inserções
@@ -411,11 +390,57 @@ stats_loop:
     li a7, 1
     ecall
 
+    # Verifica se a lista está vazia
+    la t1, head
+    lw t0, 0(t1)
+    beq t0, zero, print_empty_list_stats
+
+    # Inicializa as variáveis de estatísticas
+    lw t2, 0(t0)           # t2 = menor valor (inicializa com o valor do primeiro nó)
+    lw t3, 0(t0)           # t3 = maior valor (inicializa com o valor do primeiro nó)
+    li t4, 0               # t4 = contador de elementos
+
+stats_loop:
+    lw t5, 0(t0)           # t5 = valor do nó atual
+    blt t5, t2, update_min # Atualiza menor valor se necessário
+    bgt t5, t3, update_max # Atualiza maior valor se necessário
+
+    addi t4, t4, 1         # Incrementa o contador de elementos
+    lw t0, 4(t0)           # Carrega o endereço do próximo nó
+    bne t0, zero, stats_loop # Se 'próximo' não for zero, continuar
+	
+	la a0, total_elements_msg
+    li a7, 4
+    ecall
+
+    mv a0, t4           # Total de elementos
+    li a7, 1
+    ecall
+	
+	
+    # Exibe o menor valor
+    la a0, min_value_msg
+    li a7, 4
+    ecall
+
+    mv a0, t2              # Menor valor
+    li a7, 1
+    ecall
+
+    # Exibe o maior valor
+    la a0, max_value_msg
+    li a7, 4
+    ecall
+
+    mv a0, t3              # Maior valor
+    li a7, 1
+    ecall
+
     la a0, new_line
     li a7, 4
     ecall
 
-    j main
+    ret
 
 update_min:
     mv t2, t5              # Atualiza menor valor
@@ -430,12 +455,12 @@ print_empty_list_stats:
     la a0, empty_list
     li a7, 4
     ecall
+    ret
 
-    j main
 
-# --------------------------------------------------
-
-# Função que sai do programa (6)
+# --------------------------------------------------#
+#					Fecha Programa  				                  #
+# --------------------------------------------------#
 
 call_exit:
     call exit
@@ -446,5 +471,3 @@ exit:
     ecall
     li a7, 10
     ecall
-
-# --------------------------------------------------
